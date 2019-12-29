@@ -10,14 +10,16 @@ import (
 
 const (
 	usage = `usage:
-countdown 25s
-countdown 1m50s
-countdown 2h45m50s
+countdown 25s 0s
+countdown 1m50s 10s
+countdown 2h45m50s 5m30s
 `
 	tick = time.Second
 )
 
 var (
+	totalTime      time.Duration
+	warningTime    time.Duration
 	timer          *time.Timer
 	ticker         *time.Ticker
 	queues         chan termbox.Event
@@ -31,6 +33,10 @@ func draw(d time.Duration) {
 
 	str := format(d)
 	text := toText(str)
+	fgColor := termbox.ColorWhite
+	if d <= warningTime {
+		fgColor = termbox.ColorRed
+	}
 
 	if !startDone {
 		startDone = true
@@ -39,7 +45,7 @@ func draw(d time.Duration) {
 
 	x, y := startX, startY
 	for _, s := range text {
-		echo(s, x, y)
+		echo(s, x, y, fgColor)
 		x += s.width()
 	}
 
@@ -104,17 +110,24 @@ loop:
 }
 
 func main() {
-	if len(os.Args) != 2 {
+	if len(os.Args) != 3 {
 		stderr(usage)
 		os.Exit(2)
 	}
 
-	duration, err := time.ParseDuration(os.Args[1])
+	total, err := time.ParseDuration(os.Args[1])
 	if err != nil {
 		stderr("error: invalid duration: %v\n", os.Args[1])
 		os.Exit(2)
 	}
-	left := duration
+	totalTime = total
+
+	warning, err := time.ParseDuration(os.Args[2])
+	if err != nil {
+		stderr("error: invalid warning time: %v\n", os.Args[2])
+		os.Exit(2)
+	}
+	warningTime = warning
 
 	err = termbox.Init()
 	if err != nil {
@@ -128,6 +141,6 @@ func main() {
 		}
 	}()
 
-	draw(left)
-	countdown(left)
+	draw(totalTime)
+	countdown(totalTime)
 }

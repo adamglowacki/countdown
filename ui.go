@@ -7,7 +7,15 @@ import (
 	"unicode/utf8"
 )
 
+const (
+	background = 0xe9
+)
+
 type Symbol []string
+
+func init() {
+	termbox.SetOutputMode(termbox.Output256)
+}
 
 func (s Symbol) width() int {
 	return utf8.RuneCountInString(s[0])
@@ -43,11 +51,11 @@ func toText(str string) Text {
 
 type Font map[rune]Symbol
 
-func echo(s Symbol, startX, startY int) {
+func echo(s Symbol, startX, startY int, fg termbox.Attribute) {
 	x, y := startX, startY
 	for _, line := range s {
 		for _, r := range line {
-			termbox.SetCell(x, y, r, termbox.ColorDefault, termbox.ColorDefault)
+			termbox.SetCell(x, y, r, fg, background)
 			x++
 		}
 		x = startX
@@ -56,7 +64,7 @@ func echo(s Symbol, startX, startY int) {
 }
 
 func clear() {
-	err := termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	err := termbox.Clear(background, background)
 	if err != nil {
 		panic(err)
 	}
